@@ -44,7 +44,17 @@ Thanks to a build step, we can greatly simplify the way the lens works.
     //
     // Instead, we use the generated factory method, providing as with
     // a (generated as well) immutable implementation of Person
-    Person person = PersonFactory.create();
+    Person person = PersonFactory.create(
+      name: 'John Doe',
+      address: AddressFactory.create(
+        street: 'Sesame Street',
+        number: 5,
+        postalCode: 'S-101-P2',
+        country: CountryFactory.create(
+          name: 'Belgium'
+        )
+      )
+    );
     
     // As a simple test, let's access a property
     print(person.address.country.name); // outputs: 'Belgium'
