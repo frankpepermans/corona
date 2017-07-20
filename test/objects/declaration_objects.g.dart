@@ -60,9 +60,8 @@ Country countryLens<S, T extends S>(Country entity,
     }
   }
 
-  while (tearOffs.isNotEmpty) {
-    newValue = tearOffs.removeLast()(
-        values.removeLast(), schema.path$.removeLast(), newValue);
+  for (int i = tearOffs.length - 1; i >= 0; i--) {
+    newValue = tearOffs[i](values[i], schema.path$[i], newValue);
   }
 
   return newValue;
@@ -160,9 +159,8 @@ Address addressLens<S, T extends S>(Address entity,
     }
   }
 
-  while (tearOffs.isNotEmpty) {
-    newValue = tearOffs.removeLast()(
-        values.removeLast(), schema.path$.removeLast(), newValue);
+  for (int i = tearOffs.length - 1; i >= 0; i--) {
+    newValue = tearOffs[i](values[i], schema.path$[i], newValue);
   }
 
   return newValue;
@@ -237,9 +235,8 @@ Person personLens<S, T extends S>(Person entity,
     }
   }
 
-  while (tearOffs.isNotEmpty) {
-    newValue = tearOffs.removeLast()(
-        values.removeLast(), schema.path$.removeLast(), newValue);
+  for (int i = tearOffs.length - 1; i >= 0; i--) {
+    newValue = tearOffs[i](values[i], schema.path$[i], newValue);
   }
 
   return newValue;
@@ -336,9 +333,8 @@ Employee employeeLens<S, T extends S>(Employee entity,
     }
   }
 
-  while (tearOffs.isNotEmpty) {
-    newValue = tearOffs.removeLast()(
-        values.removeLast(), schema.path$.removeLast(), newValue);
+  for (int i = tearOffs.length - 1; i >= 0; i--) {
+    newValue = tearOffs[i](values[i], schema.path$[i], newValue);
   }
 
   return newValue;
