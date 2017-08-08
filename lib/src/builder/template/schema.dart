@@ -13,7 +13,7 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
   T convert(S input) {
     final StringBuffer buffer = new StringBuffer();
     final Set<PropertyAccessorElement> accessors = new Set<PropertyAccessorElement>.from(input.accessors);
-    
+
     input.allSupertypes.forEach((InterfaceType type) {
       if (!type.isObject) accessors.addAll(type.accessors);
     });

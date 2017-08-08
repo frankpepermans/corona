@@ -1,8 +1,8 @@
-
 library corona;
 
-export 'src/annotations.dart';
+export 'package:built_collection/built_collection.dart';
 
-export 'src/builder/class_generator.dart';
+export 'src/annotations.dart' show lens;
 
-export 'src/builder/objects/object_schema.dart';
+export 'src/builder/class_generator.dart' show TearOff, ClassGenerator;
+export 'src/builder/objects/object_schema.dart' show ObjectSchema;

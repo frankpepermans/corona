@@ -9,11 +9,14 @@ part of declaration_object;
 
 class _CountryImpl implements Country {
   final String name;
-  const _CountryImpl({this.name});
+  final BuiltSet<String> codes;
+  const _CountryImpl({this.name, this.codes});
   dynamic _getValueFromKey(String key) {
     switch (key) {
       case 'name':
         return name;
+      case 'codes':
+        return codes;
     }
     return null;
   }
@@ -22,16 +25,21 @@ class _CountryImpl implements Country {
     switch (key) {
       case 'name':
         return null;
+      case 'codes':
+        return null;
     }
     return null;
   }
 }
 
 _CountryImpl _countryTearOff(Country source, String property, dynamic value) =>
-    new _CountryImpl(name: property == 'name' ? value : source.name);
+    new _CountryImpl(
+        name: property == 'name' ? value : source.name,
+        codes: property == 'codes' ? value : source.codes);
 
 class CountryFactory {
-  static Country create({String name}) => new _CountryImpl(name: name);
+  static Country create({String name, BuiltSet<String> codes}) =>
+      new _CountryImpl(name: name, codes: codes);
 }
 
 class _Country$<T> extends ObjectSchema<T> {
@@ -39,6 +47,10 @@ class _Country$<T> extends ObjectSchema<T> {
   ObjectSchema<String> get name => new ObjectSchema<String>(path$ != null
       ? (new List<String>.from(path$)..add('name'))
       : const <String>['name']);
+  ObjectSchema<BuiltSet<String>> get codes =>
+      new ObjectSchema<BuiltSet<String>>(path$ != null
+          ? (new List<String>.from(path$)..add('codes'))
+          : const <String>['codes']);
 }
 
 Country countryLens<S, T extends S>(Country entity,

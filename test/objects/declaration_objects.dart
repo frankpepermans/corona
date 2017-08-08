@@ -1,11 +1,13 @@
 library declaration_object;
 
 import 'package:corona/corona.dart';
+import 'package:built_collection/built_collection.dart';
 
 part 'declaration_objects.g.dart';
 
 abstract class Country {
   String get name;
+  BuiltSet<String> get codes;
 }
 
 abstract class Address {
