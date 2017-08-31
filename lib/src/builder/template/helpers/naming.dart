@@ -7,3 +7,7 @@ String getLensName(String forClassName) => '${forClassName[0].toLowerCase()}${fo
 String getCtrTearOffName(String forClassName) => '_${forClassName[0].toLowerCase()}${forClassName.substring(1)}TearOff';
 
 String getFactoryName(String forClassName) => '${forClassName}Factory';
+
+String getReaderName(String forClassName) => 'read$forClassName';
+
+String getWriterName(String forClassName) => 'write$forClassName';

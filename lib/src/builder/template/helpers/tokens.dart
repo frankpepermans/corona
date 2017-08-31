@@ -12,6 +12,9 @@ String get argsClose => ')';
 String get bracketsOpen => '{';
 String get bracketsClose => '}';
 
+String get listOpen => '[';
+String get listClose => ']';
+
 String get typeOpen => '<';
 String get typeClose => '>';
 
@@ -21,6 +24,7 @@ String get fatArrow => '=>';
 
 String get closeLine => ';';
 String get ddot => ':';
+String get equals => '=';
 
 class Decl {
 
@@ -34,6 +38,7 @@ class Decl {
   String get forFactory => 'factory';
   String get forReturn => 'return';
   String get forDynamic => 'dynamic';
+  String get forVoid => 'void';
   String get forStatic => 'static';
 
 }

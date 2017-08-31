@@ -89,8 +89,8 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
     buffer.write(tokens.bracketsClose);
 
     buffer.write('''
-    ${input.displayName} ${naming.getLensName(input.displayName)}<S, T extends S>
-      (${input.displayName} entity, ObjectSchema<S> path(${naming.getSchemaName(input.displayName)}<${input.displayName}> schema), T swapper(S oldValue)) {
+    ${input.displayName} ${naming.getLensName(input.displayName)}<S>
+      (${input.displayName} entity, ObjectSchema<S> path(${naming.getSchemaName(input.displayName)}<${input.displayName}> schema), S swapper(S oldValue)) {
     final ObjectSchema<S> schema = path(const ${naming.getSchemaName(input.displayName)}(null));
     final List<dynamic> values = <dynamic>[entity];
     final List<TearOff<dynamic>> tearOffs = <TearOff<dynamic>>[${naming.getCtrTearOffName(input.displayName)}];

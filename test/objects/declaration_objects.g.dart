@@ -9,7 +9,7 @@ part of declaration_object;
 
 class _CountryImpl implements Country {
   final String name;
-  final BuiltSet<String> codes;
+  final List<String> codes;
   const _CountryImpl({this.name, this.codes});
   dynamic _getValueFromKey(String key) {
     switch (key) {
@@ -38,8 +38,29 @@ _CountryImpl _countryTearOff(Country source, String property, dynamic value) =>
         codes: property == 'codes' ? value : source.codes);
 
 class CountryFactory {
-  static Country create({String name, BuiltSet<String> codes}) =>
+  static Country create({String name, List<String> codes}) =>
       new _CountryImpl(name: name, codes: codes);
+}
+
+Uint8List writeCountry(Country value) {
+  if (value == null) return new Uint8List.fromList(const <int>[0]);
+  final List<int> data = <int>[1];
+  write(data, writeString(value.name));
+  write(data, writeIterable(value.codes, writeString));
+  return new Uint8List.fromList(data);
+}
+
+Country readCountry(Uint8List data) {
+  if (data[0] == 0) return null;
+  int index = 1, size;
+  size = data[index];
+  final String name = readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final List<String> codes =
+      readIterable(data.sublist(index + 1, index + size + 1), readString);
+  index += size + 1;
+  return new _CountryImpl(name: name, codes: codes);
 }
 
 class _Country$<T> extends ObjectSchema<T> {
@@ -47,8 +68,8 @@ class _Country$<T> extends ObjectSchema<T> {
   ObjectSchema<String> get name => new ObjectSchema<String>(path$ != null
       ? (new List<String>.from(path$)..add('name'))
       : const <String>['name']);
-  ObjectSchema<BuiltSet<String>> get codes =>
-      new ObjectSchema<BuiltSet<String>>(path$ != null
+  ObjectSchema<List<String>> get codes =>
+      new ObjectSchema<List<String>>(path$ != null
           ? (new List<String>.from(path$)..add('codes'))
           : const <String>['codes']);
 }
@@ -136,6 +157,37 @@ class AddressFactory {
           country: country);
 }
 
+Uint8List writeAddress(Address value) {
+  if (value == null) return new Uint8List.fromList(const <int>[0]);
+  final List<int> data = <int>[1];
+  write(data, writeString(value.street));
+  write(data, writeInt(value.number));
+  write(data, writeString(value.postalCode));
+  write(data, writeCountry(value.country));
+  return new Uint8List.fromList(data);
+}
+
+Address readAddress(Uint8List data) {
+  if (data[0] == 0) return null;
+  int index = 1, size;
+  size = data[index];
+  final String street = readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final int number = readInt(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final String postalCode =
+      readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final Country country =
+      readCountry(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  return new _AddressImpl(
+      street: street, number: number, postalCode: postalCode, country: country);
+}
+
 class _Address$<T> extends ObjectSchema<T> {
   const _Address$(Iterable<String> path$) : super(path$);
   ObjectSchema<String> get street => new ObjectSchema<String>(path$ != null
@@ -216,6 +268,27 @@ _PersonImpl _personTearOff(Person source, String property, dynamic value) =>
 class PersonFactory {
   static Person create({String name, Address address}) =>
       new _PersonImpl(name: name, address: address);
+}
+
+Uint8List writePerson(Person value) {
+  if (value == null) return new Uint8List.fromList(const <int>[0]);
+  final List<int> data = <int>[1];
+  write(data, writeString(value.name));
+  write(data, writeAddress(value.address));
+  return new Uint8List.fromList(data);
+}
+
+Person readPerson(Uint8List data) {
+  if (data[0] == 0) return null;
+  int index = 1, size;
+  size = data[index];
+  final String name = readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final Address address =
+      readAddress(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  return new _PersonImpl(name: name, address: address);
 }
 
 class _Person$<T> extends ObjectSchema<T> {
@@ -308,6 +381,37 @@ class EmployeeFactory {
           {String id, Person supervisor, String name, Address address}) =>
       new _EmployeeImpl<T>(
           id: id, supervisor: supervisor, name: name, address: address);
+}
+
+Uint8List writeEmployee(Employee value) {
+  if (value == null) return new Uint8List.fromList(const <int>[0]);
+  final List<int> data = <int>[1];
+  write(data, writeString(value.id));
+  write(data, writePerson(value.supervisor));
+  write(data, writeString(value.name));
+  write(data, writeAddress(value.address));
+  return new Uint8List.fromList(data);
+}
+
+Employee readEmployee(Uint8List data) {
+  if (data[0] == 0) return null;
+  int index = 1, size;
+  size = data[index];
+  final String id = readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final Person supervisor =
+      readPerson(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final String name = readString(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  size = data[index];
+  final Address address =
+      readAddress(data.sublist(index + 1, index + size + 1));
+  index += size + 1;
+  return new _EmployeeImpl(
+      id: id, supervisor: supervisor, name: name, address: address);
 }
 
 class _Employee$<T> extends ObjectSchema<T> {

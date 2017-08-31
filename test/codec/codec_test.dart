@@ -7,6 +7,8 @@ import 'dart:typed_data';
 
 import 'package:corona/src/codec/convert.dart';
 
+import '../objects/declaration_objects.dart';
+
 void main() {
   group('bool', () {
     test('all values', () {
@@ -59,30 +61,6 @@ void main() {
     });
   });
 
-  group('double', () {
-    const double zero = .0;
-    const double short = 1.23;
-    const double long = 76484811.238415185874514;
-    const double fract = 1/3;
-    const double shortNeg = -1.23;
-    const double longNeg = -76484811.238415185874514;
-    const double fractNeg = -1/3;
-
-    test('zero value', () {
-      expect(readDouble(writeDouble(null)), null);
-      expect(readDouble(writeDouble(zero)), zero);
-    });
-
-    test('all bit ranges', () {
-      expect(readDouble(writeDouble(short)), short);
-      expect(readDouble(writeDouble(long)), long);
-      expect(readDouble(writeDouble(fract)), fract);
-      expect(readDouble(writeDouble(shortNeg)), shortNeg);
-      expect(readDouble(writeDouble(longNeg)), longNeg);
-      expect(readDouble(writeDouble(fractNeg)), fractNeg);
-    });
-  });
-
   group('String', () {
     const String zero = '';
     const String strA = 'hello!';
@@ -127,13 +105,45 @@ void main() {
 
     test('zero value', () {
       expect(readIterable(writeIterable(null, writeInt), readInt), null);
-      expect(readIterable(writeIterable(zeroList, writeInt), readInt), zeroList);
+      expect(
+          readIterable(writeIterable(zeroList, writeInt), readInt), zeroList);
     });
 
     test('types', () {
       expect(readIterable(writeIterable(intList, writeInt), readInt), intList);
       expect(readIterable(writeIterable(strList, writeString), readString),
           strList);
+    });
+  });
+
+  group('Complex data', () {
+    Employee<Person> employee;
+
+    setUp(() {
+      // Create a new immutable [Employee]
+      employee = EmployeeFactory.create(
+          name: 'Alan Smith',
+          supervisor: PersonFactory.create(
+              name: 'Robert Walker',
+              address: AddressFactory.create(
+                  street: 'Regent Street',
+                  number: 3,
+                  country: CountryFactory.create(
+                      name: 'Holland', codes: const <String>['HOL', 'NETH']))));
+    });
+
+    test('should be able to update deep values', () {
+      Employee<Person> rebuiltEmployee = readEmployee(writeEmployee(employee));
+
+      expect(rebuiltEmployee.name, 'Alan Smith');
+      expect(rebuiltEmployee.address, isNull);
+      expect(rebuiltEmployee.id, isNull);
+      expect(rebuiltEmployee.supervisor.name, 'Robert Walker');
+      expect(rebuiltEmployee.supervisor.address.street, 'Regent Street');
+      expect(rebuiltEmployee.supervisor.address.number, 3);
+      expect(rebuiltEmployee.supervisor.address.country.name, 'Holland');
+      expect(rebuiltEmployee.supervisor.address.country.codes.first, 'HOL');
+      expect(rebuiltEmployee.supervisor.address.country.codes.last, 'NETH');
     });
   });
 }
