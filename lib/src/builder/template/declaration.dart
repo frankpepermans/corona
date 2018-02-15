@@ -15,6 +15,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     final StringBuffer buffer = new StringBuffer();
     final List<InterfaceType> interfaces = <InterfaceType>[input.type];
 
+    buffer.writeln('@immutable');
     buffer.write(tokens.decl.forClass);
     buffer.write(tokens.space);
     buffer.write(naming.getImplClassName(input.displayName));
@@ -70,6 +71,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         .forEach(accessors.addAll);
 
     accessors.forEach((PropertyAccessorElement accessor) {
+      buffer.write('@override ');
       buffer.write(tokens.decl.forFinal);
       buffer.write(tokens.space);
       buffer.write(accessor.returnType.displayName);
