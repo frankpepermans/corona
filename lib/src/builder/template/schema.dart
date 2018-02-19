@@ -42,7 +42,7 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
 
     buffer.write(tokens.bracketsOpen);
 
-    buffer.write('const ${naming.getSchemaName(input.displayName)}(Iterable<String> path\$) : super(path\$);');
+    buffer.write('const ${naming.getSchemaName(input.displayName)}(List<String> path\$) : super(path\$);');
 
     accessors.forEach((PropertyAccessorElement accessor) {
       if (accessor.isGetter) {
@@ -91,29 +91,29 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
     buffer.write('''
     ${input.displayName} ${naming.getLensName(input.displayName)}<S>
       (${input.displayName} entity, ObjectSchema<S> path(${naming.getSchemaName(input.displayName)}<${input.displayName}> schema), S swapper(S oldValue)) {
-    final ObjectSchema<S> schema = path(const ${naming.getSchemaName(input.displayName)}(null));
+    final ObjectSchema<S> schema = path(const ${naming.getSchemaName(input.displayName)}<${input.displayName}>(null));
     final List<dynamic> values = <dynamic>[entity];
     final List<TearOff<dynamic>> tearOffs = <TearOff<dynamic>>[${naming.getCtrTearOffName(input.displayName)}];
-    dynamic newValue;
+    S newValue;
   
     for (int i=0, len=schema.path\$.length; i<len; i++) {
       String key = schema.path\$[i];
-      dynamic currValue = values.last;
+      TearOffAndValueObjectSchema currValue = values.last as TearOffAndValueObjectSchema;
   
       if (i < len-1) {
-        tearOffs.add(currValue._getTearOffForKey(key));
-        values.add(currValue._getValueFromKey(key));
+        tearOffs.add(currValue.getTearOffForKey(key));
+        values.add(currValue.getValueFromKey(key));
       } else {
-        newValue = swapper(currValue._getValueFromKey(key));
+        newValue = swapper(currValue.getValueFromKey(key) as S);
       }
     }
     
     for (int i=tearOffs.length-1; i>=0; i--) {
       newValue = tearOffs[i](
-          values[i], schema.path\$[i], newValue);
+          values[i], schema.path\$[i], newValue) as S;
     }
   
-    return newValue;
+    return newValue as ${input.displayName};
     } ''');
 
     return buffer.toString();

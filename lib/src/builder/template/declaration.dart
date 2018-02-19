@@ -99,9 +99,11 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.argsClose);
     buffer.write(tokens.closeLine);
 
+    buffer.write('@override');
+    buffer.write(tokens.space);
     buffer.write(tokens.decl.forDynamic);
     buffer.write(tokens.space);
-    buffer.write('_getValueFromKey');
+    buffer.write('getValueFromKey');
     buffer.write(tokens.argsOpen);
     buffer.write('String key');
     buffer.write(tokens.argsClose);
@@ -125,9 +127,11 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.closeLine);
     buffer.write(tokens.bracketsClose);
 
+    buffer.write('@override');
+    buffer.write(tokens.space);
     buffer.write('TearOff<dynamic>');
     buffer.write(tokens.space);
-    buffer.write('_getTearOffForKey');
+    buffer.write('getTearOffForKey');
     buffer.write(tokens.argsOpen);
     buffer.write('String key');
     buffer.write(tokens.argsClose);
@@ -213,7 +217,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     if (accessors.isNotEmpty) {
       buffer.write(accessors
           .map((PropertyAccessorElement accessor) =>
-              '''${accessor.displayName}: property == '${accessor.displayName}' ? value : source.${accessor.displayName}''')
+              '''${accessor.displayName}: property == '${accessor.displayName}' ? value as ${accessor.returnType.displayName} : source.${accessor.displayName}''')
           .join(','));
     }
 
@@ -337,10 +341,10 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
       if (data.encoder != null) {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(data.sublist(index + 1, index + size + 1), ${data.encoder});');
+            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + size + 1)), ${data.encoder});');
       } else {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(data.sublist(index + 1, index + size + 1));');
+            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + size + 1)));');
       }
 
       buffer.write('index += size + 1;');

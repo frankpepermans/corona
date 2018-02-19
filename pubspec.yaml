@@ -1,6 +1,6 @@
 name: corona
 description: A lens implementation, strongly typed, with a build step.
-version: 0.1.1
+version: 0.1.2
 homepage: http://www.igindo.com
 author: Frank <frank@igindo.com>
 
