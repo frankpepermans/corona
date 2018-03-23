@@ -129,7 +129,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.write('@override');
     buffer.write(tokens.space);
-    buffer.write('TearOff<dynamic>');
+    buffer.write('dynamic');
     buffer.write(tokens.space);
     buffer.write('getTearOffForKey');
     buffer.write(tokens.argsOpen);
