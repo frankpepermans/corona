@@ -93,7 +93,7 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
       (${input.displayName} entity, ObjectSchema<S> path(${naming.getSchemaName(input.displayName)}<${input.displayName}> schema), S swapper(S oldValue)) {
     final ObjectSchema<S> schema = path(const ${naming.getSchemaName(input.displayName)}<${input.displayName}>(null));
     final List<dynamic> values = <dynamic>[entity];
-    final List<TearOff<dynamic>> tearOffs = <TearOff<dynamic>>[${naming.getCtrTearOffName(input.displayName)}];
+    final List<dynamic> tearOffs = <dynamic>[${naming.getCtrTearOffName(input.displayName)}];
     S newValue;
   
     for (int i=0, len=schema.path\$.length; i<len; i++) {

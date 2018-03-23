@@ -4,6 +4,8 @@
 .packages
 .pub/
 build/
+.dart_tool/
+.idea/
 # If you're building an application, you may want to check-in your pubspec.lock
 pubspec.lock
 
