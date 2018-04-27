@@ -1,9 +1,10 @@
-import 'package:corona/src/builder/class_generator.dart' show TearOff;
-
 abstract class TearOffAndValueObjectSchema {
-
   dynamic getValueFromKey(String key);
 
-  TearOff<dynamic> getTearOffForKey(String key);
+  List<TearOffAndValueObjectSchema> expand(
+      [List<TearOffAndValueObjectSchema> list]);
 
+  Map<String, dynamic> toJSON();
+
+  Function(dynamic, String, dynamic) getTearOffForKey(String key);
 }

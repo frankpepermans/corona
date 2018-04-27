@@ -99,7 +99,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.argsClose);
     buffer.write(tokens.closeLine);
 
-    buffer.write('@override');
+    buffer.writeln('@override');
     buffer.write(tokens.space);
     buffer.write(tokens.decl.forDynamic);
     buffer.write(tokens.space);
@@ -127,9 +127,79 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.closeLine);
     buffer.write(tokens.bracketsClose);
 
+    buffer.writeln('@override');
+    buffer.write(tokens.space);
+    buffer.write('List<TearOffAndValueObjectSchema>');
+    buffer.write(tokens.space);
+    buffer.write('expand');
+    buffer.write(tokens.argsOpen);
+    buffer.write('[List<TearOffAndValueObjectSchema> list]');
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.bracketsOpen);
+    buffer.write('list ??= <TearOffAndValueObjectSchema>[]');
+    buffer.writeln(tokens.closeLine);
+    buffer.write('list.add(this)');
+    buffer.writeln(tokens.closeLine);
+
+    accessors.forEach((PropertyAccessorElement accessor) {
+      if (accessor.returnType.element is ClassElement) {
+        ClassElement elmCast = accessor.returnType.element;
+
+        final InterfaceType tearoffType = elmCast.allSupertypes.firstWhere(
+            (InterfaceType type) =>
+                type.displayName == 'TearOffAndValueObjectSchema',
+            orElse: () => null);
+        final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
+            (InterfaceType type) =>
+                type.element.library.isDartCore && type.name == 'Iterable',
+            orElse: () => null);
+
+        if (tearoffType != null) {
+          buffer.write('if (${accessor.displayName} != null)');
+          buffer.write(tokens.bracketsOpen);
+          buffer.writeln(
+              '(this.${accessor.displayName} as ${naming.getImplClassName(accessor.returnType.displayName)}).expand(list)');
+          buffer.writeln(tokens.closeLine);
+          buffer.write(tokens.bracketsClose);
+        } else if (iterableType != null) {
+          final InterfaceType interfaceType = accessor.returnType;
+
+          buffer.writeln(
+              'this.${accessor.displayName}?.forEach((${naming.getImplClassName(interfaceType.typeArguments.first.displayName)} item) => item.expand(list))');
+          buffer.writeln(tokens.closeLine);
+        }
+      }
+    });
+
+    buffer.writeln(tokens.decl.forReturn);
+    buffer.writeln(tokens.space);
+    buffer.writeln('list');
+    buffer.writeln(tokens.closeLine);
+
+    buffer.write(tokens.bracketsClose);
+
+    buffer.writeln('@override');
+    buffer.write(tokens.space);
+    buffer.write('Map<String, dynamic>');
+    buffer.write(tokens.space);
+    buffer.write('toJSON');
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.write(tokens.fatArrow);
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecEncoderName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.write('.convert');
+    buffer.write(tokens.argsOpen);
+    buffer.write('this');
+    buffer.write(tokens.argsClose);
+    buffer.write(tokens.closeLine);
+
     buffer.write('@override');
     buffer.write(tokens.space);
-    buffer.write('TearOff<dynamic>');
+    buffer.write('Function(dynamic, String, dynamic)');
     buffer.write(tokens.space);
     buffer.write('getTearOffForKey');
     buffer.write(tokens.argsOpen);
@@ -154,6 +224,8 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
           buffer.write(tokens.space);
           buffer
               .write(naming.getCtrTearOffName(accessor.returnType.displayName));
+          buffer.write(tokens.space);
+          buffer.write('as Function(dynamic, String, dynamic)');
           buffer.write(tokens.closeLine);
         } else {
           buffer.write(tokens.decl.forReturn);
@@ -357,9 +429,176 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             '${accessor.displayName}: ${accessor.displayName}')
         .join(','));
 
-    buffer.write(');');
+    buffer.writeln(');');
 
     buffer.write(tokens.bracketsClose);
+
+    /// Codec
+    buffer.write(tokens.decl.forClass);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecName(input.displayName));
+    buffer.write(tokens.space);
+
+    buffer.write('extends Codec<${input.displayName}, Map<String, dynamic>>');
+
+    buffer.writeln(tokens.bracketsOpen);
+
+    /*
+    const QuestionCodec();
+
+  @override
+  Converter<Question, Map<String, dynamic>> get encoder =>
+      const QuestionEncoder<Question, Map<String, dynamic>>();
+  @override
+  Converter<Map<String, dynamic>, Question> get decoder =>
+      const QuestionDecoder<Map<String, dynamic>, Question>();
+     */
+
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.closeLine);
+
+    buffer.writeln('@override');
+    buffer.writeln(
+        'Converter<${input.displayName}, Map<String, dynamic>> get encoder');
+    buffer.write(tokens.space);
+    buffer.write(tokens.fatArrow);
+    buffer.write(tokens.space);
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecEncoderName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.closeLine);
+
+    buffer.writeln('@override');
+    buffer.writeln(
+        'Converter<Map<String, dynamic>, ${input.displayName}> get decoder');
+    buffer.write(tokens.space);
+    buffer.write(tokens.fatArrow);
+    buffer.write(tokens.space);
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecDecoderName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.closeLine);
+
+    buffer.write(tokens.bracketsClose);
+
+    /*
+    class QuestionEncoder
+    extends Converter<Question, Map<String, dynamic>> {
+  const QuestionEncoder();
+
+  @override
+  Map<String, dynamic> convert(Question data) {
+    if (data == null) return null;
+
+    final AnswerCodec answerCodec = const AnswerCodec();
+
+    return <String, dynamic>{
+      ModuleEntity.ID: data.id,
+      Question.TYPE: data.type,
+      Question.QUESTION: data.question,
+      Question.ANSWERS: data.answers?.map(answerCodec.encode)?.toList()
+    };
+  }
+}
+     */
+
+    buffer.write(tokens.decl.forClass);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecEncoderName(input.displayName));
+    buffer.write(tokens.space);
+
+    buffer
+        .write('extends Converter<${input.displayName}, Map<String, dynamic>>');
+
+    buffer.writeln(tokens.bracketsOpen);
+
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecEncoderName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.closeLine);
+
+    buffer.writeln('@override');
+    buffer.write('Map<String, dynamic>');
+    buffer.write(tokens.space);
+    buffer.write('convert');
+    buffer.write(tokens.argsOpen);
+    buffer.write('${input.displayName} data');
+    buffer.write(tokens.argsClose);
+
+    buffer.write(tokens.fatArrow);
+    buffer.write(tokens.space);
+    buffer.write('<String, dynamic>');
+    buffer.writeln(tokens.bracketsOpen);
+
+    if (accessors.isNotEmpty) {
+      accessors.forEach((PropertyAccessorElement accessor) {
+        buffer.writeln(
+            ''' '${accessor.displayName}': ${_toMapValueForCodec(accessor.displayName, accessor.returnType.displayName, accessor.returnType)},''');
+      });
+    }
+
+    buffer.writeln(tokens.bracketsClose);
+
+    buffer.write(tokens.closeLine);
+
+    buffer.writeln(tokens.bracketsClose);
+
+    buffer.write(tokens.decl.forClass);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecDecoderName(input.displayName));
+    buffer.write(tokens.space);
+
+    buffer
+        .write('extends Converter<Map<String, dynamic>, ${input.displayName}>');
+
+    buffer.writeln(tokens.bracketsOpen);
+
+    buffer.write(tokens.ctrConst);
+    buffer.write(tokens.space);
+    buffer.write(naming.getCodecDecoderName(input.displayName));
+    buffer.write(tokens.argsOpen);
+    buffer.write(tokens.argsClose);
+    buffer.writeln(tokens.closeLine);
+
+    buffer.writeln('@override');
+    buffer.write(input.displayName);
+    buffer.write(tokens.space);
+    buffer.write('convert');
+    buffer.write(tokens.argsOpen);
+    buffer.write('Map<String, dynamic> data');
+    buffer.write(tokens.argsClose);
+
+    buffer.write(tokens.fatArrow);
+    buffer.write(tokens.space);
+
+    buffer.write(naming.getFactoryName(input.displayName));
+    buffer.write('.create');
+    buffer.writeln(tokens.argsOpen);
+
+    if (accessors.isNotEmpty) {
+      accessors.forEach((PropertyAccessorElement accessor) {
+        buffer.writeln(
+            ''' ${accessor.displayName}: ${_toPropertyForCodec(accessor.displayName, accessor.returnType.displayName, accessor.returnType)},''');
+      });
+    }
+
+    buffer.writeln(tokens.argsClose);
+
+    buffer.write(tokens.closeLine);
+
+    buffer.writeln(tokens.bracketsClose);
+
+    /// end Codec
 
     return buffer.toString();
   }
@@ -395,6 +634,92 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             return new _CodecData('readIterable', data.method);
           } else {
             return new _CodecData('read${type.name}');
+          }
+        }
+
+        break;
+    }
+
+    return null;
+  }
+
+  String _toMapValueForCodec(String property, String displayName, DartType type,
+      {bool asTearoff: false}) {
+    switch (displayName) {
+      case 'int':
+      case 'double':
+      case 'String':
+      case 'bool':
+        return 'data?.$property';
+      case 'DateTime':
+        return 'data?.$property?.millisecondsSinceEpoch';
+      default:
+        if (type.element is ClassElement) {
+          ClassElement elmCast = type.element;
+
+          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
+              (InterfaceType type) =>
+                  type.element.library.isDartCore && type.name == 'Iterable',
+              orElse: () => null);
+
+          if (iterableType != null) {
+            final InterfaceType interfaceType = type;
+            final String codec = _toMapValueForCodec(
+                property,
+                interfaceType.typeArguments.first.displayName,
+                interfaceType.typeArguments.first,
+                asTearoff: true);
+
+            return 'data?.$property?.map($codec)?.toList(growable: false)';
+          } else {
+            if (asTearoff) {
+              return 'const ${type.name}Encoder().convert';
+            }
+
+            return 'data == null || data.$property == null ? null : const ${type.name}Encoder().convert(data.$property)';
+          }
+        }
+
+        break;
+    }
+
+    return null;
+  }
+
+  String _toPropertyForCodec(String property, String displayName, DartType type,
+      {bool asTearoff: false}) {
+    switch (displayName) {
+      case 'int':
+      case 'double':
+      case 'String':
+      case 'bool':
+        return '''data['$property']''';
+      case 'DateTime':
+        return '''data == null || data['$property'] == null ? null : new DateTime.fromMillisecondsSinceEpoch(data['$property'])''';
+      default:
+        if (type.element is ClassElement) {
+          ClassElement elmCast = type.element;
+
+          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
+              (InterfaceType type) =>
+                  type.element.library.isDartCore && type.name == 'Iterable',
+              orElse: () => null);
+
+          if (iterableType != null) {
+            final InterfaceType interfaceType = type;
+            final String codec = _toPropertyForCodec(
+                property,
+                interfaceType.typeArguments.first.displayName,
+                interfaceType.typeArguments.first,
+                asTearoff: true);
+
+            return '''(data['$property'] as List<Map<String, dynamic>>)?.map($codec)?.toList(growable: false)''';
+          } else {
+            if (asTearoff) {
+              return '''const ${type.name}Decoder().convert''';
+            }
+
+            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'])''';
           }
         }
 
@@ -441,7 +766,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         break;
     }
 
-    return null;
+    return new _CodecData('write${type.name}');
   }
 
   bool _hasGenericTypes(S input) => input.type.typeParameters.isNotEmpty;

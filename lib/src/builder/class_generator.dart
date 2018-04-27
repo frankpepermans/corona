@@ -9,15 +9,13 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:corona/src/builder/template/declaration.dart';
 import 'package:corona/src/builder/template/schema.dart';
 
-typedef T TearOff<T>(T source, String property, dynamic value);
-
 class ClassGenerator extends Generator {
 
   const ClassGenerator();
 
   @override
   Future<String> generate(Element element, _) async {
-    if (element is ClassElement) {
+    if (element is ClassElement && element.isAbstract) {
       final StringBuffer buffer = new StringBuffer();
       const DeclarationDecoder<ClassElement, String> decl = const DeclarationDecoder<ClassElement, String>();
       const SchemaDecoder<ClassElement, String> schema = const SchemaDecoder<ClassElement, String>();
