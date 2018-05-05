@@ -158,14 +158,14 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
           buffer.write('if (${accessor.displayName} != null)');
           buffer.write(tokens.bracketsOpen);
           buffer.writeln(
-              '(this.${accessor.displayName} as ${naming.getImplClassName(accessor.returnType.displayName)}).expand(list)');
+              'this.${accessor.displayName}.expand(list)');
           buffer.writeln(tokens.closeLine);
           buffer.write(tokens.bracketsClose);
         } else if (iterableType != null) {
           final InterfaceType interfaceType = accessor.returnType;
 
           buffer.writeln(
-              'this.${accessor.displayName}?.forEach((${naming.getImplClassName(interfaceType.typeArguments.first.displayName)} item) => item.expand(list))');
+              'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.displayName} item) => item.expand(list))');
           buffer.writeln(tokens.closeLine);
         }
       }
@@ -177,6 +177,82 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.writeln(tokens.closeLine);
 
     buffer.write(tokens.bracketsClose);
+
+
+
+
+    buffer.writeln('@override');
+    buffer.write(tokens.space);
+    buffer.write('bool');
+    buffer.write(tokens.space);
+    buffer.write('operator');
+    buffer.write(tokens.space);
+    buffer.write('==');
+    buffer.write(tokens.argsOpen);
+    buffer.write('Object other');
+    buffer.write(tokens.argsClose);
+    buffer.write(tokens.space);
+    buffer.writeln(tokens.fatArrow);
+
+    buffer.writeln('other is ${input.displayName} && other.hashCode == this.hashCode');
+
+    buffer.write(tokens.closeLine);
+
+    /*
+    @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is Notification &&
+        this.kind == other.kind &&
+        this.error == other.error &&
+        this.stackTrace == other.stackTrace &&
+        this.value == other.value;
+  }
+     */
+
+
+
+
+    buffer.writeln('@override');
+    buffer.write(tokens.space);
+    buffer.write('int');
+    buffer.write(tokens.space);
+    buffer.write('get');
+    buffer.write(tokens.space);
+    buffer.write('hashCode');
+    buffer.write(tokens.fatArrow);
+
+    String stepper = '0';
+
+    accessors.forEach((PropertyAccessorElement accessor) {
+      if (accessor.returnType.element is ClassElement) {
+        ClassElement elmCast = accessor.returnType.element;
+        String current;
+        /// _finish(_combine(_combine(0, a.hashCode), b.hashCode));
+        final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
+                (InterfaceType type) =>
+            type.element.library.isDartCore && type.name == 'Iterable',
+            orElse: () => null);
+
+        if (iterableType != null) {
+          current = 'hashObjects(this.${accessor.displayName})';
+        } else {
+          current = 'this.${accessor.displayName}.hashCode';
+        }
+
+        stepper = 'combine($stepper, $current)';
+      }
+    });
+
+    buffer.writeln('finish($stepper)');
+    buffer.writeln(tokens.closeLine);
+
+
+
+
+
 
     buffer.writeln('@override');
     buffer.write(tokens.space);
@@ -693,7 +769,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       case 'double':
       case 'String':
       case 'bool':
-        return '''data['$property']''';
+        return '''data['$property'] as $displayName''';
       case 'DateTime':
         return '''data == null || data['$property'] == null ? null : new DateTime.fromMillisecondsSinceEpoch(data['$property'])''';
       default:
@@ -719,7 +795,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
               return '''const ${type.name}Decoder().convert''';
             }
 
-            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'])''';
+            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'] as Map<String, dynamic>)''';
           }
         }
 
