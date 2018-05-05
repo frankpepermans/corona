@@ -237,16 +237,16 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             orElse: () => null);
 
         if (iterableType != null) {
-          current = 'hashObjects(this.${accessor.displayName})';
+          current = 'hash_combineAll(this.${accessor.displayName})';
         } else {
           current = 'this.${accessor.displayName}.hashCode';
         }
 
-        stepper = 'combine($stepper, $current)';
+        stepper = 'hash_combine($stepper, $current)';
       }
     });
 
-    buffer.writeln('finish($stepper)');
+    buffer.writeln('hash_finish($stepper)');
     buffer.writeln(tokens.closeLine);
 
 
