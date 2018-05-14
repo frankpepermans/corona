@@ -164,9 +164,11 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         } else if (iterableType != null) {
           final InterfaceType interfaceType = accessor.returnType;
 
-          buffer.writeln(
-              'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.displayName} item) => item.expand(list))');
-          buffer.writeln(tokens.closeLine);
+          if (!['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+            buffer.writeln(
+                'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.displayName} item) => item.expand(list))');
+            buffer.writeln(tokens.closeLine);
+          }
         }
       }
     });
@@ -723,6 +725,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       {bool asTearoff: false}) {
     switch (displayName) {
       case 'int':
+      case 'num':
       case 'double':
       case 'String':
       case 'bool':
@@ -740,6 +743,11 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
           if (iterableType != null) {
             final InterfaceType interfaceType = type;
+
+            if (['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+              return 'data?.$property';
+            }
+
             final String codec = _toMapValueForCodec(
                 property,
                 interfaceType.typeArguments.first.displayName,
@@ -766,6 +774,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       {bool asTearoff: false}) {
     switch (displayName) {
       case 'int':
+      case 'num':
       case 'double':
       case 'String':
       case 'bool':
@@ -783,6 +792,11 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
           if (iterableType != null) {
             final InterfaceType interfaceType = type;
+
+            if (['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+              return '''data['$property'] as $displayName''';
+            }
+
             final String codec = _toPropertyForCodec(
                 property,
                 interfaceType.typeArguments.first.displayName,
