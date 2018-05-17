@@ -8,7 +8,7 @@ environment:
   sdk: '>=2.0.0-dev.51.0 <2.0.0'
 
 dependencies:
-  quiver: any
+  quiver: ^0.29.0
 
 dev_dependencies:
   build: ^0.12.0
