@@ -14,17 +14,19 @@ class ClassGenerator extends Generator {
   const ClassGenerator();
 
   @override
-  Future<String> generate(Element element, _) async {
-    if (element is ClassElement && element.isAbstract) {
-      final StringBuffer buffer = new StringBuffer();
-      const DeclarationDecoder<ClassElement, String> decl = const DeclarationDecoder<ClassElement, String>();
-      const SchemaDecoder<ClassElement, String> schema = const SchemaDecoder<ClassElement, String>();
+  FutureOr<String> generate(LibraryReader library, _) async {
+    library.allElements.forEach((Element element) {
+      if (element is ClassElement && element.isAbstract) {
+        final StringBuffer buffer = new StringBuffer();
+        const DeclarationDecoder<ClassElement, String> decl = const DeclarationDecoder<ClassElement, String>();
+        const SchemaDecoder<ClassElement, String> schema = const SchemaDecoder<ClassElement, String>();
 
-      buffer.write(decl.convert(element));
-      buffer.write(schema.convert(element));
+        buffer.write(decl.convert(element));
+        buffer.write(schema.convert(element));
 
-      return buffer.toString();
-    }
+        return buffer.toString();
+      }
+    });
 
     return null;
   }
