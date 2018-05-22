@@ -10,25 +10,30 @@ import 'package:corona/src/builder/template/declaration.dart';
 import 'package:corona/src/builder/template/schema.dart';
 
 class ClassGenerator extends Generator {
-
   const ClassGenerator();
 
   @override
-  FutureOr<String> generate(LibraryReader library, _) async {
-    library.allElements.forEach((Element element) {
-      if (element is ClassElement && element.isAbstract) {
-        final StringBuffer buffer = new StringBuffer();
-        const DeclarationDecoder<ClassElement, String> decl = const DeclarationDecoder<ClassElement, String>();
-        const SchemaDecoder<ClassElement, String> schema = const SchemaDecoder<ClassElement, String>();
+  FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
+    final ClassElement element = library.allElements.firstWhere(
+        (Element element) =>
+            element.location.components.first.contains(buildStep.inputId.path),
+        orElse: () => null) as ClassElement;
 
-        buffer.write(decl.convert(element));
-        buffer.write(schema.convert(element));
+    if (element == null) return null;
 
-        return buffer.toString();
-      }
-    });
+    if (element.isAbstract) {
+      final StringBuffer buffer = new StringBuffer();
+      const DeclarationDecoder<ClassElement, String> decl =
+          const DeclarationDecoder<ClassElement, String>();
+      const SchemaDecoder<ClassElement, String> schema =
+          const SchemaDecoder<ClassElement, String>();
+
+      buffer.write(decl.convert(element));
+      buffer.write(schema.convert(element));
+
+      return buffer.toString();
+    }
 
     return null;
   }
-
 }
