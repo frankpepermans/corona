@@ -481,23 +481,23 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.bracketsOpen);
 
     buffer.write('if (data[0] == 0) return null;');
-    buffer.write('int index = 1, size;');
+    buffer.write('int index = 1, _size;');
 
     accessors.forEach((PropertyAccessorElement accessor) {
       _CodecData data =
           _toReadableData(accessor.returnType.displayName, accessor.returnType);
 
-      buffer.write('size = data[index];');
+      buffer.write('_size = data[index];');
 
       if (data.encoder != null) {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + size + 1)), ${data.encoder});');
+            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
       } else {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + size + 1)));');
+            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
       }
 
-      buffer.write('index += size + 1;');
+      buffer.write('index += _size + 1;');
     });
 
     buffer.write('return new ${naming.getImplClassName(input.displayName)}(');
@@ -780,7 +780,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       case 'bool':
         return '''data['$property'] as $displayName''';
       case 'DateTime':
-        return '''data == null || data['$property'] == null ? null : new DateTime.fromMillisecondsSinceEpoch(data['$property'])''';
+        return '''data == null || data['$property'] == null ? null : new DateTime.fromMillisecondsSinceEpoch(data['$property'] as int)''';
       default:
         if (type.element is ClassElement) {
           ClassElement elmCast = type.element;
