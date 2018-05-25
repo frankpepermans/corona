@@ -7,12 +7,11 @@ author: Frank <frank@igindo.com>
 environment:
   sdk: '>=2.0.0-dev.51.0 <2.0.0'
 
-dependencies:
-  quiver: ^0.29.0
-
 dev_dependencies:
   build: ^0.12.0
   source_gen: ^0.8.0
   build_runner: ^0.8.7
   build_test: ^0.10.0
   glob: '>=1.1.5'
+  corona_core:
+    git: git@github.com:frankpepermans/corona_core.git
