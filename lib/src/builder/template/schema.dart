@@ -91,14 +91,14 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
     buffer.write('''
     ${input.displayName} ${naming.getLensName(input.displayName)}<S>
       (${input.displayName} entity, ObjectSchema<S> path(${naming.getSchemaName(input.displayName)}<${input.displayName}> schema), S swapper(S oldValue)) {
-    final ObjectSchema<S> schema = path(const ${naming.getSchemaName(input.displayName)}<${input.displayName}>(null));
-    final List<dynamic> values = <dynamic>[entity];
-    final List<dynamic> tearOffs = <dynamic>[${naming.getCtrTearOffName(input.displayName)}];
+    final schema = path(const ${naming.getSchemaName(input.displayName)}<${input.displayName}>(null));
+    final values = <dynamic>[entity];
+    final tearOffs = <dynamic>[${naming.getCtrTearOffName(input.displayName)}];
     dynamic newValue;
   
-    for (int i=0, len=schema.path\$.length; i<len; i++) {
-      String key = schema.path\$[i];
-      TearOffAndValueObjectSchema currValue = values.last as TearOffAndValueObjectSchema;
+    for (var i=0, len=schema.path\$.length; i<len; i++) {
+      var key = schema.path\$[i];
+      var currValue = values.last as TearOffAndValueObjectSchema;
   
       if (i < len-1) {
         tearOffs.add(currValue.getTearOffForKey(key));
@@ -108,7 +108,7 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
       }
     }
     
-    for (int i=tearOffs.length-1; i>=0; i--) {
+    for (var i=tearOffs.length-1; i>=0; i--) {
       newValue = tearOffs[i](
           values[i], schema.path\$[i], newValue);
     }

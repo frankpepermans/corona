@@ -453,7 +453,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.write(
         'if (value == null) return new Uint8List.fromList(const <int>[0]);');
-    buffer.write('final List<int> data = <int>[1];');
+    buffer.write('final data = <int>[1];');
 
     accessors.forEach((PropertyAccessorElement accessor) {
       _CodecData data =
@@ -491,10 +491,10 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
       if (data.encoder != null) {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
+            'final ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
       } else {
         buffer.write(
-            'final ${accessor.returnType.displayName} ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
+            'final ${accessor.displayName} = ${data.method}(new Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
       }
 
       buffer.write('index += _size + 1;');
