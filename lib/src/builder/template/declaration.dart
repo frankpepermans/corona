@@ -241,7 +241,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         if (iterableType != null) {
           current = 'hash_combineAll(this.${accessor.displayName})';
         } else {
-          if (accessor.returnType.displayName == 'double') current = 'this.${accessor.displayName}.toString().hashCode';
+          if (accessor.returnType.displayName == 'double') current = 'this.${accessor.displayName} == null ? null.hashCode : this.${accessor.displayName}.toString().hashCode';
           else current = 'this.${accessor.displayName}.hashCode';
         }
 
