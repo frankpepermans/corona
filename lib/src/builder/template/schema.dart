@@ -80,7 +80,7 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
         buffer.write(genType);
         buffer.write(tokens.typeClose);
         buffer.write(tokens.argsOpen);
-        buffer.write('''path\$ != null ? (new List<String>.from(path\$)..add('${accessor.displayName}')) : const <String>['${accessor.displayName}']''');
+        buffer.write('''path\$ != null ? (List<String>.from(path\$)..add('${accessor.displayName}')) : const ['${accessor.displayName}']''');
         buffer.write(tokens.argsClose);
         buffer.write(tokens.closeLine);
       }
