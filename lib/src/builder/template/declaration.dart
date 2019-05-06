@@ -460,12 +460,14 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       _CodecData data =
           _toWritableData(accessor.returnType.displayName, accessor.returnType);
 
-      if (data.encoder != null) {
-        buffer.write(
-            'write(data, ${data.method}(value.${accessor.displayName}, ${data.encoder}));');
-      } else {
-        buffer.write(
-            'write(data, ${data.method}(value.${accessor.displayName}));');
+      if (data != null) {
+        if (data.encoder != null) {
+          buffer.write(
+              'write(data, ${data.method}(value.${accessor.displayName}, ${data.encoder}));');
+        } else {
+          buffer.write(
+              'write(data, ${data.method}(value.${accessor.displayName}));');
+        }
       }
     });
 
@@ -490,12 +492,14 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
       buffer.write('_size = data[index];');
 
-      if (data.encoder != null) {
-        buffer.write(
-            'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
-      } else {
-        buffer.write(
-            'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
+      if (data != null) {
+        if (data.encoder != null) {
+          buffer.write(
+              'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
+        } else {
+          buffer.write(
+              'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
+        }
       }
 
       buffer.write('index += _size + 1;');
@@ -518,7 +522,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(naming.getCodecName(input.displayName));
     buffer.write(tokens.space);
 
-    buffer.write('extends Codec<${input.displayName}, Map<String, dynamic>>');
+    buffer.write('extends Codec<${input.displayName}, Map>');
 
     buffer.writeln(tokens.bracketsOpen);
 
@@ -542,7 +546,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.writeln('@override');
     buffer.writeln(
-        'Converter<${input.displayName}, Map<String, dynamic>> get encoder');
+        'Converter<${input.displayName}, Map> get encoder');
     buffer.write(tokens.space);
     buffer.write(tokens.fatArrow);
     buffer.write(tokens.space);
@@ -555,7 +559,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.writeln('@override');
     buffer.writeln(
-        'Converter<Map<String, dynamic>, ${input.displayName}> get decoder');
+        'Converter<Map, ${input.displayName}> get decoder');
     buffer.write(tokens.space);
     buffer.write(tokens.fatArrow);
     buffer.write(tokens.space);
@@ -595,7 +599,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.space);
 
     buffer
-        .write('extends Converter<${input.displayName}, Map<String, dynamic>>');
+        .write('extends Converter<${input.displayName}, Map>');
 
     buffer.writeln(tokens.bracketsOpen);
 
@@ -607,7 +611,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.writeln(tokens.closeLine);
 
     buffer.writeln('@override');
-    buffer.write('Map<String, dynamic>');
+    buffer.write('Map');
     buffer.write(tokens.space);
     buffer.write('convert');
     buffer.write(tokens.argsOpen);
@@ -638,7 +642,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.space);
 
     buffer
-        .write('extends Converter<Map<String, dynamic>, ${input.displayName}>');
+        .write('extends Converter<Map, ${input.displayName}>');
 
     buffer.writeln(tokens.bracketsOpen);
 
@@ -654,7 +658,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.space);
     buffer.write('convert');
     buffer.write(tokens.argsOpen);
-    buffer.write('Map<String, dynamic> data');
+    buffer.write('Map data');
     buffer.write(tokens.argsClose);
 
     buffer.write(tokens.fatArrow);
@@ -804,13 +808,13 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
                 interfaceType.typeArguments.first,
                 asTearoff: true);
 
-            return '''(data['$property'] as List<Map<String, dynamic>>)?.map($codec)?.toList(growable: false)''';
+            return '''(data['$property'] as List)?.cast<Map>()?.map($codec)?.toList(growable: false)''';
           } else {
             if (asTearoff) {
               return '''const ${type.name}Decoder().convert''';
             }
 
-            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'] as Map<String, dynamic>)''';
+            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'] as Map)''';
           }
         }
 

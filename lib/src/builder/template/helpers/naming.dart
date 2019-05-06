@@ -2,9 +2,11 @@ String getImplClassName(String forClassName) => '_${forClassName}Impl';
 
 String getSchemaName(String forClassName) => '_$forClassName\$';
 
-String getLensName(String forClassName) => '${forClassName[0].toLowerCase()}${forClassName.substring(1)}Lens';
+String getLensName(String forClassName) =>
+    '${forClassName[0].toLowerCase()}${forClassName.substring(1)}Lens';
 
-String getCtrTearOffName(String forClassName) => '_${forClassName[0].toLowerCase()}${forClassName.substring(1)}TearOff';
+String getCtrTearOffName(String forClassName) =>
+    '_${forClassName[0].toLowerCase().replaceFirst(r'<[^>]+>', '')}${forClassName.substring(1)}TearOff';
 
 String getFactoryName(String forClassName) => '${forClassName}Factory';
 
