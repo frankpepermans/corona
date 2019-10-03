@@ -799,7 +799,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             final InterfaceType interfaceType = type;
 
             if (['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
-              return '''data['$property'] as $displayName''';
+              return '''data['$property']?.cast<${interfaceType.typeArguments.first.displayName}>()''';
             }
 
             final String codec = _toPropertyForCodec(
