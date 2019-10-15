@@ -157,14 +157,21 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         if (tearoffType != null) {
           buffer.write('if (${accessor.displayName} != null)');
           buffer.write(tokens.bracketsOpen);
-          buffer.writeln(
-              'this.${accessor.displayName}.expand(list)');
+          buffer.writeln('this.${accessor.displayName}.expand(list)');
           buffer.writeln(tokens.closeLine);
           buffer.write(tokens.bracketsClose);
         } else if (iterableType != null) {
           final InterfaceType interfaceType = accessor.returnType;
 
-          if (!['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+          if (![
+            'int',
+            'double',
+            'num',
+            'String',
+            'bool',
+            'Map<String, dynamic>',
+            'Map'
+          ].contains(interfaceType.typeArguments.first.displayName)) {
             buffer.writeln(
                 'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.displayName} item) => item.expand(list))');
             buffer.writeln(tokens.closeLine);
@@ -180,9 +187,6 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.write(tokens.bracketsClose);
 
-
-
-
     buffer.writeln('@override');
     buffer.write(tokens.space);
     buffer.write('bool');
@@ -196,7 +200,8 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(tokens.space);
     buffer.writeln(tokens.fatArrow);
 
-    buffer.writeln('other is ${input.displayName} && other.hashCode == this.hashCode');
+    buffer.writeln(
+        'other is ${input.displayName} && other.hashCode == this.hashCode');
 
     buffer.write(tokens.closeLine);
 
@@ -214,9 +219,6 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
   }
      */
 
-
-
-
     buffer.writeln('@override');
     buffer.write(tokens.space);
     buffer.write('int');
@@ -232,17 +234,21 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       if (accessor.returnType.element is ClassElement) {
         ClassElement elmCast = accessor.returnType.element;
         String current;
+
         /// _finish(_combine(_combine(0, a.hashCode), b.hashCode));
         final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-                (InterfaceType type) =>
-            type.element.library.isDartCore && type.name == 'Iterable',
+            (InterfaceType type) =>
+                type.element.library.isDartCore && type.name == 'Iterable',
             orElse: () => null);
 
         if (iterableType != null) {
           current = 'hash_combineAll(this.${accessor.displayName})';
         } else {
-          if (accessor.returnType.displayName == 'double') current = 'this.${accessor.displayName} == null ? null.hashCode : this.${accessor.displayName}.toString().hashCode';
-          else current = 'this.${accessor.displayName}.hashCode';
+          if (accessor.returnType.displayName == 'double')
+            current =
+                'this.${accessor.displayName} == null ? null.hashCode : this.${accessor.displayName}.toString().hashCode';
+          else
+            current = 'this.${accessor.displayName}.hashCode';
         }
 
         stepper = 'hash_combine($stepper, $current)';
@@ -251,11 +257,6 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.writeln('hash_finish($stepper)');
     buffer.writeln(tokens.closeLine);
-
-
-
-
-
 
     buffer.writeln('@override');
     buffer.write(tokens.space);
@@ -444,78 +445,6 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.write(tokens.bracketsClose);
 
-    buffer.write('Uint8List');
-    buffer.write(tokens.space);
-    buffer.write(naming.getWriterName(input.displayName));
-    buffer.write(tokens.argsOpen);
-    buffer.write('${input.displayName} value');
-    buffer.write(tokens.argsClose);
-    buffer.write(tokens.bracketsOpen);
-
-    buffer.write(
-        'if (value == null) return new Uint8List.fromList(const [0]);');
-    buffer.write('final data = [1];');
-
-    accessors.forEach((PropertyAccessorElement accessor) {
-      _CodecData data =
-          _toWritableData(accessor.returnType.displayName, accessor.returnType);
-
-      if (data != null) {
-        if (data.encoder != null) {
-          buffer.write(
-              'write(data, ${data.method}(value.${accessor.displayName}, ${data.encoder}));');
-        } else {
-          buffer.write(
-              'write(data, ${data.method}(value.${accessor.displayName}));');
-        }
-      }
-    });
-
-    buffer.write('return new Uint8List.fromList(data);');
-
-    buffer.write(tokens.bracketsClose);
-
-    buffer.write(input.displayName);
-    buffer.write(tokens.space);
-    buffer.write(naming.getReaderName(input.displayName));
-    buffer.write(tokens.argsOpen);
-    buffer.write('Uint8List data');
-    buffer.write(tokens.argsClose);
-    buffer.write(tokens.bracketsOpen);
-
-    buffer.write('if (data[0] == 0) return null;');
-    buffer.write('int _size;var index = 1;');
-
-    accessors.forEach((PropertyAccessorElement accessor) {
-      _CodecData data =
-          _toReadableData(accessor.returnType.displayName, accessor.returnType);
-
-      buffer.write('_size = data[index];');
-
-      if (data != null) {
-        if (data.encoder != null) {
-          buffer.write(
-              'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)), ${data.encoder});');
-        } else {
-          buffer.write(
-              'final ${accessor.displayName} = ${data.method}(Uint8List.fromList(data.sublist(index + 1, index + _size + 1)));');
-        }
-      }
-
-      buffer.write('index += _size + 1;');
-    });
-
-    buffer.write('return new ${naming.getImplClassName(input.displayName)}(');
-
-    buffer.write(accessors
-        .map((PropertyAccessorElement accessor) =>
-            '${accessor.displayName}: ${accessor.displayName}')
-        .join(','));
-
-    buffer.writeln(');');
-
-    buffer.write(tokens.bracketsClose);
-
     /// Codec
     buffer.write(tokens.decl.forClass);
     buffer.write(tokens.space);
@@ -545,8 +474,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.writeln(tokens.closeLine);
 
     buffer.writeln('@override');
-    buffer.writeln(
-        'Converter<${input.displayName}, Map> get encoder');
+    buffer.writeln('Converter<${input.displayName}, Map> get encoder');
     buffer.write(tokens.space);
     buffer.write(tokens.fatArrow);
     buffer.write(tokens.space);
@@ -558,8 +486,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.writeln(tokens.closeLine);
 
     buffer.writeln('@override');
-    buffer.writeln(
-        'Converter<Map, ${input.displayName}> get decoder');
+    buffer.writeln('Converter<Map, ${input.displayName}> get decoder');
     buffer.write(tokens.space);
     buffer.write(tokens.fatArrow);
     buffer.write(tokens.space);
@@ -598,8 +525,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(naming.getCodecEncoderName(input.displayName));
     buffer.write(tokens.space);
 
-    buffer
-        .write('extends Converter<${input.displayName}, Map>');
+    buffer.write('extends Converter<${input.displayName}, Map>');
 
     buffer.writeln(tokens.bracketsOpen);
 
@@ -641,8 +567,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write(naming.getCodecDecoderName(input.displayName));
     buffer.write(tokens.space);
 
-    buffer
-        .write('extends Converter<Map, ${input.displayName}>');
+    buffer.write('extends Converter<Map, ${input.displayName}>');
 
     buffer.writeln(tokens.bracketsOpen);
 
@@ -749,7 +674,15 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
           if (iterableType != null) {
             final InterfaceType interfaceType = type;
 
-            if (['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+            if ([
+              'int',
+              'double',
+              'num',
+              'String',
+              'bool',
+              'Map<String, dynamic>',
+              'Map'
+            ].contains(interfaceType.typeArguments.first.displayName)) {
               return 'data?.$property';
             }
 
@@ -798,7 +731,15 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
           if (iterableType != null) {
             final InterfaceType interfaceType = type;
 
-            if (['int', 'double', 'num', 'String', 'bool'].contains(interfaceType.typeArguments.first.displayName)) {
+            if ([
+              'int',
+              'double',
+              'num',
+              'String',
+              'bool',
+              'Map<String, dynamic>',
+              'Map'
+            ].contains(interfaceType.typeArguments.first.displayName)) {
               return '''data['$property']?.cast<${interfaceType.typeArguments.first.displayName}>()''';
             }
 
