@@ -23,6 +23,7 @@ String get getter => 'get';
 String get fatArrow => '=>';
 
 String get closeLine => ';';
+String get dot => '.';
 String get ddot => ':';
 String get equals => '=';
 
