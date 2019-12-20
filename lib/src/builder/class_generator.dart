@@ -15,10 +15,11 @@ class ClassGenerator extends Generator {
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
     final path = buildStep.inputId.path.split('/').sublist(1).join('/');
-    final ClassElement element = library.allElements.firstWhere(
-        (Element element) =>
-            element.location.components.first.contains(path),
-        orElse: () => null) as ClassElement;
+    final ClassElement element = library.allElements
+        .whereType<ClassElement>()
+        .firstWhere(
+            (element) => element.location.components.first.contains(path),
+            orElse: () => null);
 
     if (element == null) return null;
 
