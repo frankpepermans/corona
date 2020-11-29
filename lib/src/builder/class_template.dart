@@ -1,4 +1,6 @@
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:analyzer/dart/element/element.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:analyzer/dart/element/type.dart';
 
 class ClassTemplate {
@@ -6,7 +8,7 @@ class ClassTemplate {
           <PropertyAccessorElement>[],
       _ownAccessors = <PropertyAccessorElement>[];
 
-  ClassTemplate();
+  ClassTemplate({required this.name, required this.supertype});
 
   String name;
   InterfaceType supertype;
@@ -20,32 +22,28 @@ class ClassTemplate {
   }
 
   String build() {
-    final StringBuffer buffer = new StringBuffer();
+    final buffer = StringBuffer();
 
     buffer.write('class ${_createFactoryName()} {');
 
     buffer.write('const ${_createFactoryName()}();');
 
     buffer.write(
-        '${supertype.displayName} createNew({${_createFactoryArgs()}}) => new ${_createClassName()}(${_createCtrFromArgs()});');
+        '${supertype.getDisplayString(withNullability: true)} createNew({${_createFactoryArgs()}}) => new ${_createClassName()}(${_createCtrFromArgs()});');
 
     buffer.write('}');
 
-    if (supertype != null) {
-      if (supertype.element.isAbstract) {
-        buffer.write(
-            'class ${_createClassName()} implements ${supertype.displayName} {');
-      } else {
-        buffer.write(
-            'class ${_createClassName()} extends ${supertype.displayName} {');
-      }
+    if (supertype.element.isAbstract) {
+      buffer.write(
+          'class ${_createClassName()} implements ${supertype.getDisplayString(withNullability: true)} {');
     } else {
-      buffer.write('class ${_createClassName()} {');
+      buffer.write(
+          'class ${_createClassName()} extends ${supertype.getDisplayString(withNullability: true)} {');
     }
 
     _ownAccessors.forEach((PropertyAccessorElement accessor) {
       buffer.write(
-          '@override final ${accessor.returnType.displayName} ${accessor.name};');
+          '@override final ${accessor.returnType.getDisplayString(withNullability: true)} ${accessor.name};');
     });
 
     buffer.write('${_createClassName()}({${_createCtrArgs()}});');
@@ -66,14 +64,14 @@ class ClassTemplate {
   String _createFactoryArgs() {
     return _allAccessors
         .map((PropertyAccessorElement accessor) =>
-            '${accessor.returnType.displayName} ${accessor.name}')
+            '${accessor.returnType.getDisplayString(withNullability: true)} ${accessor.name}')
         .join(',');
   }
 
   String _createCtrFromArgs() {
     return _allAccessors
         .map((PropertyAccessorElement accessor) =>
-    '${accessor.name}:${accessor.name}')
+            '${accessor.name}:${accessor.name}')
         .join(',');
   }
 

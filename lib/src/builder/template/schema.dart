@@ -6,16 +6,16 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:corona/src/builder/template/helpers/naming.dart' as naming;
 import 'package:corona/src/builder/template/helpers/tokens.dart' as tokens;
 
-class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<S, T> {
+class SchemaDecoder<S extends ClassElement> extends Converter<S, String> {
   const SchemaDecoder();
 
   @override
-  T convert(S input) {
-    final StringBuffer buffer = new StringBuffer();
-    final Set<PropertyAccessorElement> accessors = new Set<PropertyAccessorElement>.from(input.accessors);
+  String convert(S input) {
+    final buffer = StringBuffer();
+    final accessors = Set<PropertyAccessorElement>.from(input.accessors);
 
     input.allSupertypes.forEach((InterfaceType type) {
-      if (!type.isObject) accessors.addAll(type.accessors);
+      if (!type.isDartCoreObject) accessors.addAll(type.accessors);
     });
 
     input.interfaces.forEach((InterfaceType type) {
@@ -42,23 +42,25 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
 
     buffer.write(tokens.bracketsOpen);
 
-    buffer.write('const ${naming.getSchemaName(input.displayName)}(List<String> path\$) : super(path\$);');
+    buffer.write(
+        'const ${naming.getSchemaName(input.displayName)}(List<String> path\$) : super(path\$);');
 
     accessors.forEach((PropertyAccessorElement accessor) {
       if (accessor.isGetter) {
         String name;
-        String genType = accessor.returnType.displayName;
+        var genType =
+            accessor.returnType.getDisplayString(withNullability: true);
 
         if (accessor.returnType.element.kind.ordinal > 0) {
-
           /*if (accessor.returnType.element.enclosingElement.library.displayName == input.library.displayName) {
             name = naming.getSchemaName(accessor.returnType.element.enclosingElement.displayName);
           } else {*/
-            name = 'ObjectSchema';
+          name = 'ObjectSchema';
           /*}*/
 
           genType = 'dynamic';
-        } else if (accessor.returnType.element.library.displayName == input.library.displayName) {
+        } else if (accessor.returnType.element.library.displayName ==
+            input.library.displayName) {
           name = naming.getSchemaName(accessor.returnType.element.displayName);
         } else {
           name = 'ObjectSchema';
@@ -80,7 +82,8 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
         buffer.write(genType);
         buffer.write(tokens.typeClose);
         buffer.write(tokens.argsOpen);
-        buffer.write('''path\$ != null ? (List<String>.from(path\$)..add('${accessor.displayName}')) : const ['${accessor.displayName}']''');
+        buffer.write(
+            '''path\$ != null ? (List<String>.from(path\$)..add('${accessor.displayName}')) : const ['${accessor.displayName}']''');
         buffer.write(tokens.argsClose);
         buffer.write(tokens.closeLine);
       }
@@ -118,38 +121,4 @@ class SchemaDecoder<S extends ClassElement, T extends String> extends Converter<
 
     return buffer.toString();
   }
-
-  String _getDisplayNameWithGenericTypes(ClassElement input) {
-    final StringBuffer buffer = new StringBuffer();
-
-    buffer.write(naming.getImplClassName(input.displayName));
-
-    if (_hasGenericTypes(input)) {
-      buffer.write(tokens.typeOpen);
-      buffer.write(_getGenericTypeDecl(input).map((_GenericTypeDecl decl) => decl.ext).join(', '));
-      buffer.write(tokens.typeClose);
-    }
-
-    return buffer.toString();
-  }
-
-  bool _hasGenericTypes(S input) => input.type.typeParameters.isNotEmpty;
-
-  Iterable<_GenericTypeDecl> _getGenericTypeDecl(S input) {
-    final List<_GenericTypeDecl> list = <_GenericTypeDecl>[];
-
-    input.type.typeParameters.forEach((TypeParameterElement t) {
-      list.add(new _GenericTypeDecl(t.displayName, t.bound.displayName));
-    });
-
-    return list;
-  }
-}
-
-class _GenericTypeDecl {
-  final String name, ext;
-
-  _GenericTypeDecl(this.name, this.ext);
-
-  String toString() => '$name extends $ext';
 }

@@ -6,14 +6,13 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:corona/src/builder/template/helpers/naming.dart' as naming;
 import 'package:corona/src/builder/template/helpers/tokens.dart' as tokens;
 
-class DeclarationDecoder<S extends ClassElement, T extends String>
-    extends Converter<S, T> {
+class DeclarationDecoder<S extends ClassElement> extends Converter<S, String> {
   const DeclarationDecoder();
 
   @override
-  T convert(S input) {
-    final StringBuffer buffer = new StringBuffer();
-    final List<InterfaceType> interfaces = <InterfaceType>[input.type];
+  String convert(S input) {
+    final buffer = StringBuffer();
+    final interfaces = <InterfaceType>[input.thisType];
 
     buffer.writeln('@immutable');
     buffer.write(tokens.decl.forClass);
@@ -26,7 +25,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       buffer.write(tokens.typeClose);
     }
 
-    if (!input.supertype.isObject || input.mixins.isNotEmpty) {
+    if (!input.supertype.isDartCoreObject || input.mixins.isNotEmpty) {
       if (input.supertype.element.isAbstract) {
         interfaces.add(input.supertype);
 
@@ -38,7 +37,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         buffer.write(tokens.space);
         buffer.write(tokens.decl.forExtends);
         buffer.write(tokens.space);
-        buffer.write(input.supertype.displayName);
+        buffer.write(input.supertype.getDisplayString(withNullability: true));
       }
     }
 
@@ -47,7 +46,8 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       buffer.write(tokens.decl.forMixins);
       buffer.write(tokens.space);
       buffer.write(input.mixins
-          .map((InterfaceType type) => type.displayName)
+          .map((InterfaceType type) =>
+              type.getDisplayString(withNullability: true))
           .join(', '));
     }
 
@@ -57,14 +57,15 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       buffer.write(tokens.space);
       buffer.write(tokens.decl.forImplements);
       buffer.write(tokens.space);
-      buffer.write(
-          interfaces.map((InterfaceType type) => type.displayName).join(', '));
+      buffer.write(interfaces
+          .map((InterfaceType type) =>
+              type.getDisplayString(withNullability: true))
+          .join(', '));
     }
 
     buffer.write(tokens.bracketsOpen);
 
-    final Set<PropertyAccessorElement> accessors =
-        new Set<PropertyAccessorElement>();
+    final accessors = <PropertyAccessorElement>{};
 
     interfaces
         .map((InterfaceType type) => type.accessors)
@@ -74,7 +75,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
       buffer.write('@override ');
       buffer.write(tokens.decl.forFinal);
       buffer.write(tokens.space);
-      buffer.write(accessor.returnType.displayName);
+      buffer.write(accessor.returnType.getDisplayString(withNullability: true));
       buffer.write(tokens.space);
       buffer.write(accessor.displayName);
       buffer.write(tokens.closeLine);
@@ -143,25 +144,26 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     accessors.forEach((PropertyAccessorElement accessor) {
       if (accessor.returnType.element is ClassElement) {
-        ClassElement elmCast = accessor.returnType.element;
-
-        final InterfaceType tearoffType = elmCast.allSupertypes.firstWhere(
-            (InterfaceType type) =>
-                type.displayName == 'TearOffAndValueObjectSchema',
+        final elmCast = accessor.returnType.element as ClassElement;
+        final InterfaceType? tearOffType = elmCast.allSupertypes.firstWhere(
+            (type) =>
+                type.getDisplayString(withNullability: true) ==
+                'TearOffAndValueObjectSchema',
             orElse: () => null);
-        final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-            (InterfaceType type) =>
-                type.element.library.isDartCore && type.name == 'Iterable',
+        final InterfaceType? iterableType = elmCast.allSupertypes.firstWhere(
+            (type) =>
+                type.element.library.isDartCore &&
+                type.getDisplayString(withNullability: true) == 'Iterable',
             orElse: () => null);
 
-        if (tearoffType != null) {
+        if (tearOffType != null) {
           buffer.write('if (${accessor.displayName} != null)');
           buffer.write(tokens.bracketsOpen);
           buffer.writeln('this.${accessor.displayName}.expand(list)');
           buffer.writeln(tokens.closeLine);
           buffer.write(tokens.bracketsClose);
         } else if (iterableType != null) {
-          final InterfaceType interfaceType = accessor.returnType;
+          final interfaceType = accessor.returnType as InterfaceType;
 
           if (![
             'int',
@@ -171,9 +173,10 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             'bool',
             'Map<String, dynamic>',
             'Map'
-          ].contains(interfaceType.typeArguments.first.displayName)) {
+          ].contains(interfaceType.typeArguments.first
+              .getDisplayString(withNullability: true))) {
             buffer.writeln(
-                'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.displayName} item) => item.expand(list))');
+                'this.${accessor.displayName}?.forEach((${interfaceType.typeArguments.first.getDisplayString(withNullability: true)} item) => item.expand(list))');
             buffer.writeln(tokens.closeLine);
           }
         }
@@ -228,27 +231,30 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     buffer.write('hashCode');
     buffer.write(tokens.fatArrow);
 
-    String stepper = '0';
+    var stepper = '0';
 
     accessors.forEach((PropertyAccessorElement accessor) {
       if (accessor.returnType.element is ClassElement) {
-        ClassElement elmCast = accessor.returnType.element;
+        final elmCast = accessor.returnType.element as ClassElement;
         String current;
 
         /// _finish(_combine(_combine(0, a.hashCode), b.hashCode));
-        final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-            (InterfaceType type) =>
-                type.element.library.isDartCore && type.name == 'Iterable',
+        final InterfaceType? iterableType = elmCast.allSupertypes.firstWhere(
+            (type) =>
+                type.element.library.isDartCore &&
+                type.getDisplayString(withNullability: true) == 'Iterable',
             orElse: () => null);
 
         if (iterableType != null) {
           current = 'hash_combineAll(this.${accessor.displayName})';
         } else {
-          if (accessor.returnType.displayName == 'double')
+          if (accessor.returnType.getDisplayString(withNullability: true) ==
+              'double') {
             current =
                 'this.${accessor.displayName} == null ? null.hashCode : this.${accessor.displayName}.toString().hashCode';
-          else
+          } else {
             current = 'this.${accessor.displayName}.hashCode';
+          }
         }
 
         stepper = 'hash_combine($stepper, $current)';
@@ -302,8 +308,8 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
             input.library.displayName) {
           buffer.write(tokens.decl.forReturn);
           buffer.write(tokens.space);
-          buffer
-              .write(naming.getCtrTearOffName(accessor.returnType.displayName));
+          buffer.write(naming.getCtrTearOffName(
+              accessor.returnType.getDisplayString(withNullability: true)));
           buffer.write(tokens.space);
           buffer.write('as Function(dynamic, String, dynamic)');
           buffer.write(tokens.closeLine);
@@ -348,7 +354,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
     buffer.write(tokens.argsOpen);
     buffer.write(
-        '${input.type.displayName} source, String property, dynamic value');
+        '${input.thisType.getDisplayString(withNullability: true)} source, String property, dynamic value');
     buffer.write(tokens.argsClose);
     buffer.write(tokens.fatArrow);
 
@@ -369,7 +375,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     if (accessors.isNotEmpty) {
       buffer.write(accessors
           .map((PropertyAccessorElement accessor) =>
-              '''${accessor.displayName}: property == '${accessor.displayName}' ? value as ${accessor.returnType.displayName} : source.${accessor.displayName}''')
+              '''${accessor.displayName}: property == '${accessor.displayName}' ? value as ${accessor.returnType.getDisplayString(withNullability: true)} : source.${accessor.displayName}''')
           .join(','));
     }
 
@@ -410,7 +416,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
 
       buffer.write(accessors
           .map((PropertyAccessorElement accessor) =>
-              '${accessor.returnType.displayName} ${accessor.displayName}')
+              '${accessor.returnType.getDisplayString(withNullability: true)} ${accessor.displayName}')
           .join(','));
 
       buffer.write(tokens.bracketsClose);
@@ -552,7 +558,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     if (accessors.isNotEmpty) {
       accessors.forEach((PropertyAccessorElement accessor) {
         buffer.writeln(
-            ''' '${accessor.displayName}': ${_toMapValueForCodec(accessor.displayName, accessor.returnType.displayName, accessor.returnType)},''');
+            ''' '${accessor.displayName}': ${_toMapValueForCodec(accessor.displayName, accessor.returnType.getDisplayString(withNullability: true), accessor.returnType)},''');
       });
     }
 
@@ -596,7 +602,7 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     if (accessors.isNotEmpty) {
       accessors.forEach((PropertyAccessorElement accessor) {
         buffer.writeln(
-            ''' ${accessor.displayName}: ${_toPropertyForCodec(accessor.displayName, accessor.returnType.displayName, accessor.returnType)},''');
+            ''' ${accessor.displayName}: ${_toPropertyForCodec(accessor.displayName, accessor.returnType.getDisplayString(withNullability: true), accessor.returnType)},''');
       });
     }
 
@@ -611,48 +617,9 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     return buffer.toString();
   }
 
-  _CodecData _toReadableData(String displayName, DartType type) {
-    switch (displayName) {
-      case 'int':
-        return new _CodecData('readInt');
-      case 'double':
-        return new _CodecData('readDouble');
-      case 'String':
-        return new _CodecData('readString');
-      case 'DateTime':
-        return new _CodecData('readDateTime');
-      case 'bool':
-        return new _CodecData('readBool');
-      default:
-        if (type.element is ClassElement) {
-          ClassElement elmCast = type.element;
-
-          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-              (InterfaceType type) =>
-                  type.element.library.isDartCore && type.name == 'Iterable',
-              orElse: () => null);
-
-          if (iterableType != null) {
-            final InterfaceType interfaceType = type;
-
-            _CodecData data = _toReadableData(
-                interfaceType.typeArguments.first.displayName,
-                interfaceType.typeArguments.first);
-
-            return new _CodecData('readIterable', data.method);
-          } else {
-            return new _CodecData('read${type.name}');
-          }
-        }
-
-        break;
-    }
-
-    return null;
-  }
-
-  String _toMapValueForCodec(String property, String displayName, DartType type,
-      {bool asTearoff: false}) {
+  String? _toMapValueForCodec(
+      String property, String displayName, DartType type,
+      {bool asTearOff = false}) {
     switch (displayName) {
       case 'int':
       case 'num':
@@ -664,15 +631,15 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         return 'data?.$property?.millisecondsSinceEpoch';
       default:
         if (type.element is ClassElement) {
-          ClassElement elmCast = type.element;
-
-          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-              (InterfaceType type) =>
-                  type.element.library.isDartCore && type.name == 'Iterable',
+          final elmCast = type.element as ClassElement;
+          final InterfaceType? iterableType = elmCast.allSupertypes.firstWhere(
+              (type) =>
+                  type.element.library.isDartCore &&
+                  type.getDisplayString(withNullability: true) == 'Iterable',
               orElse: () => null);
 
           if (iterableType != null) {
-            final InterfaceType interfaceType = type;
+            final interfaceType = type as InterfaceType;
 
             if ([
               'int',
@@ -682,23 +649,25 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
               'bool',
               'Map<String, dynamic>',
               'Map'
-            ].contains(interfaceType.typeArguments.first.displayName)) {
+            ].contains(interfaceType.typeArguments.first
+                .getDisplayString(withNullability: true))) {
               return 'data?.$property';
             }
 
-            final String codec = _toMapValueForCodec(
+            final codec = _toMapValueForCodec(
                 property,
-                interfaceType.typeArguments.first.displayName,
+                interfaceType.typeArguments.first
+                    .getDisplayString(withNullability: true),
                 interfaceType.typeArguments.first,
-                asTearoff: true);
+                asTearOff: true);
 
             return 'data?.$property?.map($codec)?.toList(growable: false)';
           } else {
-            if (asTearoff) {
-              return 'const ${type.name}Encoder().convert';
+            if (asTearOff) {
+              return 'const ${type.getDisplayString(withNullability: true)}Encoder().convert';
             }
 
-            return 'data == null || data.$property == null ? null : const ${type.name}Encoder().convert(data.$property)';
+            return 'data == null || data.$property == null ? null : const ${type.getDisplayString(withNullability: true)}Encoder().convert(data.$property)';
           }
         }
 
@@ -708,8 +677,9 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     return null;
   }
 
-  String _toPropertyForCodec(String property, String displayName, DartType type,
-      {bool asTearoff: false}) {
+  String? _toPropertyForCodec(
+      String property, String displayName, DartType type,
+      {bool asTearOff = false}) {
     switch (displayName) {
       case 'int':
       case 'num':
@@ -721,15 +691,15 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
         return '''data == null || data['$property'] == null ? null : new DateTime.fromMillisecondsSinceEpoch(data['$property'] as int)''';
       default:
         if (type.element is ClassElement) {
-          ClassElement elmCast = type.element;
-
-          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-              (InterfaceType type) =>
-                  type.element.library.isDartCore && type.name == 'Iterable',
+          final elmCast = type.element as ClassElement;
+          final InterfaceType? iterableType = elmCast.allSupertypes.firstWhere(
+              (type) =>
+                  type.element.library.isDartCore &&
+                  type.getDisplayString(withNullability: true) == 'Iterable',
               orElse: () => null);
 
           if (iterableType != null) {
-            final InterfaceType interfaceType = type;
+            final interfaceType = type as InterfaceType;
 
             if ([
               'int',
@@ -739,23 +709,25 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
               'bool',
               'Map<String, dynamic>',
               'Map'
-            ].contains(interfaceType.typeArguments.first.displayName)) {
-              return '''data['$property']?.cast<${interfaceType.typeArguments.first.displayName}>()''';
+            ].contains(interfaceType.typeArguments.first
+                .getDisplayString(withNullability: true))) {
+              return '''data['$property']?.cast<${interfaceType.typeArguments.first.getDisplayString(withNullability: true)}>()''';
             }
 
-            final String codec = _toPropertyForCodec(
+            final codec = _toPropertyForCodec(
                 property,
-                interfaceType.typeArguments.first.displayName,
+                interfaceType.typeArguments.first
+                    .getDisplayString(withNullability: true),
                 interfaceType.typeArguments.first,
-                asTearoff: true);
+                asTearOff: true);
 
             return '''(data['$property'] as List)?.cast<Map>()?.map($codec)?.toList(growable: false)''';
           } else {
-            if (asTearoff) {
-              return '''const ${type.name}Decoder().convert''';
+            if (asTearOff) {
+              return '''const ${type.getDisplayString(withNullability: true)}Decoder().convert''';
             }
 
-            return '''data == null || data['$property'] == null ? null : const ${type.name}Decoder().convert(data['$property'] as Map)''';
+            return '''data == null || data['$property'] == null ? null : const ${type.getDisplayString(withNullability: true)}Decoder().convert(data['$property'] as Map)''';
           }
         }
 
@@ -765,53 +737,17 @@ class DeclarationDecoder<S extends ClassElement, T extends String>
     return null;
   }
 
-  _CodecData _toWritableData(String displayName, DartType type) {
-    switch (displayName) {
-      case 'int':
-        return new _CodecData('writeInt');
-      case 'double':
-        return new _CodecData('writeDouble');
-      case 'String':
-        return new _CodecData('writeString');
-      case 'DateTime':
-        return new _CodecData('writeDateTime');
-      case 'bool':
-        return new _CodecData('writeBool');
-      default:
-        if (type.element is ClassElement) {
-          ClassElement elmCast = type.element;
-
-          final InterfaceType iterableType = elmCast.allSupertypes.firstWhere(
-              (InterfaceType type) =>
-                  type.element.library.isDartCore && type.name == 'Iterable',
-              orElse: () => null);
-
-          if (iterableType != null) {
-            final InterfaceType interfaceType = type;
-
-            _CodecData data = _toWritableData(
-                interfaceType.typeArguments.first.displayName,
-                interfaceType.typeArguments.first);
-
-            return new _CodecData('writeIterable', data.method);
-          } else {
-            return new _CodecData('write${type.name}');
-          }
-        }
-
-        break;
-    }
-
-    return new _CodecData('write${type.name}');
-  }
-
-  bool _hasGenericTypes(S input) => input.type.typeParameters.isNotEmpty;
+  bool _hasGenericTypes(S input) =>
+      (input.thisType as TypeParameterizedElement).typeParameters.isNotEmpty;
 
   Iterable<_GenericTypeDecl> _getGenericTypeDecl(S input) {
-    final List<_GenericTypeDecl> list = <_GenericTypeDecl>[];
+    final list = <_GenericTypeDecl>[];
 
-    input.type.typeParameters.forEach((TypeParameterElement t) {
-      list.add(new _GenericTypeDecl(t.displayName, t.bound.displayName));
+    (input.thisType as TypeParameterizedElement)
+        .typeParameters
+        .forEach((TypeParameterElement t) {
+      list.add(_GenericTypeDecl(
+          t.displayName, t.bound.getDisplayString(withNullability: true)));
     });
 
     return list;
@@ -823,12 +759,6 @@ class _GenericTypeDecl {
 
   _GenericTypeDecl(this.name, this.ext);
 
+  @override
   String toString() => '$name extends $ext';
-}
-
-class _CodecData {
-  final String method;
-  final String encoder;
-
-  _CodecData(this.method, [this.encoder]);
 }
